@@ -1,0 +1,50 @@
+# ============================================================
+# Sauti TTS - Requirements
+# ============================================================
+
+# --- Core ML ---
+torch>=2.1.0
+torchaudio>=2.1.0
+transformers>=4.38.0
+accelerate>=0.25.0
+datasets>=2.16.0
+safetensors>=0.4.0
+
+# --- F5-TTS (install from source separately) ---
+# git clone https://github.com/SWivid/F5-TTS.git
+# cd F5-TTS && pip install -e .
+
+# --- Audio Processing ---
+librosa>=0.10.0
+soundfile>=0.12.0
+scipy>=1.11.0
+resampy>=0.4.2
+pyloudnorm>=0.1.1
+
+# --- Text Processing ---
+num2words>=0.5.13
+
+# --- Training ---
+wandb>=0.16.0
+tensorboard>=2.15.0
+peft>=0.7.0  # For LoRA
+
+# --- Evaluation ---
+pesq>=0.0.4
+pystoi>=0.4.0
+resemblyzer>=0.1.3  # Speaker embedding
+jiwer>=3.0.0  # WER/CER computation
+openai-whisper>=20231117  # For intelligibility eval
+
+# --- Utilities ---
+pyyaml>=6.0
+tqdm>=4.66.0
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+rich>=13.7.0  # Pretty console output
+hydra-core>=1.3.0
+omegaconf>=2.3.0
+huggingface_hub>=0.20.0
+modal>=0.68.0

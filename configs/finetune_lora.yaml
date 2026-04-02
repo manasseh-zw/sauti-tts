@@ -1,0 +1,77 @@
+# ============================================================
+# Sauti TTS — LoRA Fine-tuning Config
+# Target: RTX 3060/4060 (12 GB VRAM) or budget GPU
+# Only 1.72% of parameters are trainable!
+# ============================================================
+
+# Experiment
+exp_name: sauti_tts_swahili_lora
+output_dir: ckpts/sauti_tts_lora
+seed: 42
+
+# Model
+model:
+  type: F5TTS_v1_Base
+  pretrained: SWivid/F5-TTS
+  pretrained_ckpt: F5TTS_v1_Base/model_1250000.safetensors
+  vocab_path: null
+
+  # LoRA Configuration
+  use_lora: true
+  lora_rank: 16                        # Higher = more capacity but more VRAM
+  lora_alpha: 32                       # Scaling factor
+  lora_dropout: 0.05
+  lora_target_modules:                 # DiT attention layers
+    - to_q
+    - to_k
+    - to_v
+    - to_out.0
+
+  dim: 1024
+  depth: 22
+  heads: 16
+  ff_mult: 2
+  text_dim: 512
+  conv_layers: 4
+
+# Dataset
+dataset:
+  name: waxal_swahili
+  dir: data/waxal_swahili
+  metadata: metadata.csv
+  sample_rate: 24000
+
+# Training — LoRA optimized
+training:
+  epochs: 150                          # More epochs since fewer params
+  learning_rate: 5.0e-5                # Higher LR ok for LoRA
+  weight_decay: 0.0                    # No decay for LoRA params
+  max_grad_norm: 1.0
+  grad_accumulation_steps: 2           # Compensate for smaller batch
+
+  batch_size_per_gpu: 800              # Smaller for 12GB VRAM
+  batch_size_type: frame               # Max ~8.5s samples
+  max_samples: 32
+
+  num_warmup_updates: 200
+  lr_scheduler: cosine
+
+  # Disable EMA for LoRA fine-tuning
+  use_ema: false
+
+  mixed_precision: fp16
+
+  num_workers: 2                       # Lower for less RAM
+
+# Checkpointing
+checkpoint:
+  save_per_updates: 3000
+  last_per_steps: 5000
+  keep_last_n: 5
+
+# Logging
+logging:
+  type: tensorboard
+  log_per_updates: 25
+  wandb_project: sauti-tts
+  wandb_run_name: lora

@@ -1,0 +1,86 @@
+# ============================================================
+# Sauti TTS — Single GPU Fine-tuning Config
+# Target: RTX 3090/4090 (24 GB VRAM)
+# ============================================================
+
+# Experiment
+exp_name: sauti_tts_swahili
+output_dir: ckpts/sauti_tts
+seed: 42
+
+# Model
+model:
+  type: F5TTS_v1_Base
+  pretrained: SWivid/F5-TTS          # HuggingFace repo (auto-download)
+  pretrained_ckpt: F5TTS_v1_Base/model_1250000.safetensors
+  vocab_path: null                     # Will use pretrained vocab
+  use_lora: false                      # Full fine-tune for best quality
+  dim: 1024
+  depth: 22
+  heads: 16
+  ff_mult: 2
+  text_dim: 512
+  conv_layers: 4
+
+# Dataset
+dataset:
+  name: waxal_swahili
+  dir: data/waxal_swahili
+  metadata: metadata.csv
+  sample_rate: 24000
+
+# Training
+training:
+  epochs: 100
+  learning_rate: 1.0e-5               # Conservative for fine-tuning
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  grad_accumulation_steps: 1
+
+  # Frame-based batching (F5-TTS standard)
+  batch_size_per_gpu: 1600             # Frames — 3090 safe default
+  batch_size_type: frame
+  max_samples: 64                      # Max samples per batch
+
+  # NOTE on batch_size_per_gpu:
+  # - batch_size * 256 / 24000 = max sample duration in seconds
+  # - 1600 → ~17s max (drops longer samples)
+  # - 2400 → ~25.6s max
+  # - 2814 → ~30s max (includes all WaxalNLP samples)
+  # - Increase if you have >24GB VRAM
+
+  # Scheduler
+  num_warmup_updates: 500
+  lr_scheduler: cosine
+
+  # EMA
+  use_ema: true
+  ema_decay: 0.9999
+  # For short fine-tuning (<10k steps), try use_ema: false
+  # because EMA weights will be dominated by pretrained values
+
+  # Precision
+  mixed_precision: fp16
+
+  # Workers
+  num_workers: 4
+
+# Checkpointing
+checkpoint:
+  save_per_updates: 5000
+  last_per_steps: 10000
+  keep_last_n: 5
+
+# Logging
+logging:
+  type: tensorboard                    # "wandb" or "tensorboard"
+  log_per_updates: 50
+  wandb_project: sauti-tts
+  wandb_run_name: null                 # Auto-generated if null
+
+# Tips for fine-tuning:
+# 1. Start with lr=1e-5, increase to 7.5e-5 if loss plateaus
+# 2. Monitor for pronunciation degradation (evaluate every 5k steps)
+# 3. With ~16h WaxalNLP data, expect ~50-100k steps for good results
+# 4. If voice similarity is poor, check you loaded the correct checkpoint
+# 5. If only gibberish output, check vocab.txt matches pretrained

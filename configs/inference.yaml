@@ -1,0 +1,35 @@
+# ============================================================
+# Sauti TTS — Inference Configuration
+# ============================================================
+
+model:
+  checkpoint: ckpts/sauti_tts/model_last.pt
+  type: F5TTS_v1_Base
+  use_ema: true                        # Use EMA weights for inference
+
+inference:
+  # Diffusion parameters
+  nfe_steps: 32                        # Number of flow evaluation steps
+                                       # More steps = better quality but slower
+                                       # 16: fast draft, 32: production, 64: highest quality
+  cfg_strength: 2.0                    # Classifier-free guidance strength
+  sway_sampling_coef: -1.0             # Sway sampling coefficient
+  speed: 1.0                           # Speech rate (0.8 = slower, 1.2 = faster)
+
+  # Audio output
+  sample_rate: 24000
+  output_format: wav                   # wav, mp3, ogg
+
+  # Chunking for long text
+  max_chars_per_chunk: 200             # Split long texts into chunks
+  cross_fade_duration: 0.15           # Cross-fade between chunks (seconds)
+
+  # Reference audio
+  ref_audio_max_duration: 15.0         # Max reference audio duration (seconds)
+  ref_audio_min_duration: 3.0          # Min reference audio duration (seconds)
+
+# Swahili text normalization
+text:
+  normalize_numbers: true
+  expand_abbreviations: true
+  lowercase: false

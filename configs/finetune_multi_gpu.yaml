@@ -1,0 +1,69 @@
+# ============================================================
+# Sauti TTS — Multi-GPU Fine-tuning Config
+# Target: 2-8x A100/H100 or 2-4x RTX 3090/4090
+# ============================================================
+
+# Experiment
+exp_name: sauti_tts_swahili_multi
+output_dir: ckpts/sauti_tts_multi
+seed: 42
+
+# Model (same as single GPU)
+model:
+  type: F5TTS_v1_Base
+  pretrained: SWivid/F5-TTS
+  pretrained_ckpt: F5TTS_v1_Base/model_1250000.safetensors
+  vocab_path: null
+  use_lora: false
+  dim: 1024
+  depth: 22
+  heads: 16
+  ff_mult: 2
+  text_dim: 512
+  conv_layers: 4
+
+# Dataset
+dataset:
+  name: waxal_swahili
+  dir: data/waxal_swahili
+  metadata: metadata.csv
+  sample_rate: 24000
+
+# Training — Multi-GPU optimized
+training:
+  epochs: 50
+  learning_rate: 2.0e-5               # Slightly higher LR with more GPUs
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  grad_accumulation_steps: 1
+
+  # Per-GPU batch size (effective = per_gpu * num_gpus)
+  # 2x3090: 1600/gpu = 3200 total → ~8 updates/s
+  # 4x4090: 2000/gpu = 8000 total
+  # 4xA100: 6000/gpu = 24000 total
+  batch_size_per_gpu: 2000
+  batch_size_type: frame
+  max_samples: 64
+
+  num_warmup_updates: 300
+  lr_scheduler: cosine
+
+  use_ema: true
+  ema_decay: 0.9999
+
+  mixed_precision: bf16                # bf16 preferred on A100/H100
+
+  num_workers: 4                       # Per GPU
+
+# Checkpointing
+checkpoint:
+  save_per_updates: 3000
+  last_per_steps: 5000
+  keep_last_n: 3
+
+# Logging
+logging:
+  type: wandb
+  log_per_updates: 25
+  wandb_project: sauti-tts
+  wandb_run_name: multi-gpu
