@@ -226,7 +226,9 @@ The WaxalNLP Swahili TTS subset includes:
 
 ## Open Source Scope
 
-- Repository code: intended for open-source release under MIT terms.
+- Repository code: released under the MIT License. See `LICENSE`.
+- Third-party attributions: documented in `THIRD_PARTY_NOTICES.md`.
+- Checkpoint release guidance: documented in `MODEL_CARD.md`.
 - Base model weights: follow the upstream F5-TTS license.
 - Dataset usage: follow the WaxalNLP dataset license and provider-specific
   terms.
@@ -268,10 +270,11 @@ If you use Sauti TTS in research, please cite:
 - [Google WaxalNLP](https://huggingface.co/datasets/google/WaxalNLP) for the
   Swahili TTS dataset.
 
-## Release Checklist
+## Release Files
 
-Before publishing the repository publicly, make sure you also add:
+This repository now includes the core release files expected for a public
+research project:
 
-- A root `LICENSE` file.
-- A `THIRD_PARTY_NOTICES` or equivalent attribution file.
-- Clear model-card style notes for any released checkpoints.
+- `LICENSE` for the repository code.
+- `THIRD_PARTY_NOTICES.md` for upstream model and dataset attribution.
+- `MODEL_CARD.md` for checkpoint-style release notes and usage guidance.
