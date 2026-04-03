@@ -268,10 +268,4 @@ If you use Sauti TTS in research, please cite:
 - [Google WaxalNLP](https://huggingface.co/datasets/google/WaxalNLP) for the
   Swahili TTS dataset.
 
-## Release Checklist
 
-Before publishing the repository publicly, make sure you also add:
-
-- A root `LICENSE` file.
-- A `THIRD_PARTY_NOTICES` or equivalent attribution file.
-- Clear model-card style notes for any released checkpoints.
