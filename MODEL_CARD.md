@@ -1,7 +1,7 @@
 # Sauti TTS Model Card
 
 This file is the model-card style release note for any published **Sauti TTS**
-checkpoint from **MsingiAI**. If you release multiple checkpoints, duplicate
+checkpoint from **MsingiAI**. If we release multiple checkpoints, we will duplicate
 this file per release and fill in the checkpoint-specific details.
 
 ## Model Details
