@@ -397,13 +397,16 @@ def prepare_f5tts_format(
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
+    dest_vocab = output_path / "vocab.txt"
+
     # Copy vocab.txt from pretrained F5-TTS
     # This is CRITICAL — must reuse pretrained vocab for fine-tuning
     if vocab_path and os.path.exists(vocab_path):
         import shutil
-        dest_vocab = output_path / "vocab.txt"
         shutil.copy2(vocab_path, dest_vocab)
         logger.info(f"Copied pretrained vocab: {dest_vocab}")
+    elif dest_vocab.exists():
+        logger.info(f"Using existing pretrained vocab: {dest_vocab}")
     else:
         logger.warning(
             "No vocab_path provided. Will attempt to download from "
@@ -412,31 +415,43 @@ def prepare_f5tts_format(
         )
 
     # Build F5-TTS raw.arrow records with absolute audio paths.
-    records = []
     durations = []
     with open(metadata_csv, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="|")
-        for row in reader:
+        rows = list(csv.DictReader(f, delimiter="|"))
+
+    logger.info(
+        "Building F5-TTS raw.arrow and duration.json from %s rows...",
+        len(rows),
+    )
+    raw_arrow_path = output_path / "raw.arrow"
+    with ArrowWriter(path=str(raw_arrow_path)) as writer:
+        for row in tqdm(rows, desc="Preparing F5 rows"):
             audio_file = row["audio_file"]
             full_path = os.path.abspath(
                 os.path.join(os.path.dirname(metadata_csv), audio_file)
             )
-            if os.path.exists(full_path):
-                dur = get_audio_duration(full_path)
-                dur = round(dur, 4)
-                records.append(
-                    {
-                        "audio_path": full_path,
-                        "text": row["text"],
-                        "duration": dur,
-                    }
-                )
-                durations.append(dur)
+            if not os.path.exists(full_path):
+                continue
 
-    raw_arrow_path = output_path / "raw.arrow"
-    with ArrowWriter(path=str(raw_arrow_path)) as writer:
-        for record in records:
-            writer.write(record)
+            duration_raw = row.get("duration")
+            dur: float | None = None
+            if duration_raw not in (None, ""):
+                try:
+                    dur = round(float(duration_raw), 4)
+                except (TypeError, ValueError):
+                    dur = None
+
+            if dur is None:
+                dur = round(get_audio_duration(full_path), 4)
+
+            writer.write(
+                {
+                    "audio_path": full_path,
+                    "text": row["text"],
+                    "duration": dur,
+                }
+            )
+            durations.append(dur)
         writer.finalize()
 
     dur_path = output_path / "duration.json"
@@ -445,6 +460,6 @@ def prepare_f5tts_format(
 
     logger.info(
         f"Prepared F5-TTS dataset at {output_path} "
-        f"({len(records)} samples)"
+        f"({len(durations)} samples)"
     )
     return str(output_path)

@@ -503,8 +503,16 @@ class SautiInference:
                 if key in load_model_signature.parameters
             }
 
-            self.model = load_model(**load_model_kwargs)
-            logger.info("Model loaded successfully")
+            try:
+                self.model = load_model(**load_model_kwargs)
+                logger.info("Model loaded successfully")
+            except RuntimeError as e:
+                logger.warning(
+                    "Upstream F5 checkpoint loader could not load this checkpoint format. "
+                    "Falling back to repo-local checkpoint loading."
+                )
+                logger.debug("Upstream loader failure detail: %s", e)
+                self._load_model_local()
 
         except ImportError as e:
             logger.error(
@@ -514,6 +522,39 @@ class SautiInference:
                 "  cd F5-TTS && pip install -e ."
             )
             raise
+
+    def _load_model_local(self):
+        """Load repo-local checkpoints, including LoRA fine-tune outputs."""
+        from sauti_tts.model import SautiTTS, SautiTTSConfig
+
+        checkpoint = torch.load(
+            self.checkpoint_path,
+            map_location="cpu",
+            weights_only=False,
+        )
+        state_dict = checkpoint.get("model_state_dict", checkpoint)
+        use_lora = any("lora" in key.lower() for key in state_dict.keys())
+
+        pretrained_path = os.path.join(
+            "ckpts",
+            "F5TTS_v1_Base",
+            "model_1250000.safetensors",
+        )
+        config = SautiTTSConfig(
+            model_type=self.model_type,
+            pretrained_path=pretrained_path,
+            vocab_path=self.vocab_path,
+            use_lora=use_lora,
+        )
+
+        sauti = SautiTTS(config)
+        sauti.build_model()
+        sauti.load_checkpoint(self.checkpoint_path)
+        self.model = sauti.model
+        logger.info(
+            "Loaded repo-local checkpoint successfully (use_lora=%s)",
+            use_lora,
+        )
 
     def generate(
         self,
